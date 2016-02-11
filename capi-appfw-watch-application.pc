@@ -1,0 +1,13 @@
+# Package Information for pkg-config
+
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+Name: appcore-watch
+Description: watch application library
+Version: 1.1
+Requires: aul dlog capi-appfw-app-control capi-appfw-app-common
+Libs: -L${libdir} -lappcore-watch
+Cflags: -I${includedir} -I${includedir}/appcore-watch
