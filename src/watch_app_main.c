@@ -618,7 +618,7 @@ EXPORT_API int watch_app_get_elm_win(Evas_Object **win)
 	if (win == NULL)
 		return watch_app_error(APP_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
 
-	ret_win = elm_win_add(NULL, NULL, ELM_WIN_BASIC);
+	ret_win = elm_win_add(NULL, watch_core_get_appid(), ELM_WIN_BASIC);
 	if (ret_win == NULL)
 		return watch_app_error(APP_ERROR_OUT_OF_MEMORY, __FUNCTION__, NULL);
 

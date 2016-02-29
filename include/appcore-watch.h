@@ -83,6 +83,7 @@ int watch_core_terminate();
 int watch_core_set_event_callback(enum watch_core_event event,
 		        int (*cb)(void *, void *), void *data);
 
+const char *watch_core_get_appid();
 
 void watch_core_get_timeinfo(struct watch_time_s *timeinfo);
 

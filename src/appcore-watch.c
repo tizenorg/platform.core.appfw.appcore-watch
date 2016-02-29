@@ -25,6 +25,8 @@
 #include <malloc.h>
 #include <assert.h>
 
+#include <bundle_internal.h>
+
 #include <Elementary.h>
 
 #include <app_control.h>
@@ -1009,14 +1011,6 @@ static int __signal_alpm_handler(int ambient, void *data)
 	return 0;
 }
 
-static int  __watch_core_widget_init(void)
-{
-	_D("Initialize the widget");
-
-	return 0;
-
-}
-
 static void __watch_core_signal_init(void)
 {
 	_watch_core_listen_alpm_handler(__signal_alpm_handler, NULL);
@@ -1039,13 +1033,48 @@ static int __before_loop(struct watch_priv *watch, int argc, char **argv)
 	g_type_init();
 #endif
 
+	bundle *kb = NULL;
+	char *wayland_display = NULL;
+	char *xdg_runtime_dir = NULL;
+	char *width_str = NULL;
+	char *height_str = NULL;
+	int width = 360;
+	int height = 360;
+	kb = bundle_import_from_argv(argc, argv);
+	if (kb) {
+		bundle_get_str(kb, "XDG_RUNTIME_DIR", &xdg_runtime_dir);
+		bundle_get_str(kb, "WAYLAND_DISPLAY", &wayland_display);
+		bundle_get_str(kb, "WATCH_WIDTH", &width_str);
+		bundle_get_str(kb, "WATCH_HEIGHT", &height_str);
+
+		if (xdg_runtime_dir) {
+			_E("senenv: %s", xdg_runtime_dir);
+			setenv("XDG_RUNTIME_DIR", xdg_runtime_dir, 1);
+		} else
+			_E("failed to get xdgruntimedir");
+
+		if (wayland_display) {
+			_E("setenv: %s", wayland_display);
+			setenv("WAYLAND_DISPLAY", wayland_display, 1);
+		} else
+			_E("failed to get waylanddisplay");
+
+		if (width_str)
+			width = atoi(width_str);
+
+		if (height_str)
+			height = atoi(height_str);
+
+		bundle_free(kb);
+	} else
+		_E("failed to get launch argv");
+
 	elm_init(argc, argv);
 
 	r = watch_core_init(watch->name, &w_ops, argc, argv);
 	_retv_if(r < 0, -1);
 
-	r = __watch_core_widget_init();
-	_retv_if(r < 0, r);
+	__widget_create(NULL, NULL, width, height, NULL);
 
 	__watch_core_signal_init();
 
@@ -1107,3 +1136,7 @@ EXPORT_API void watch_core_get_timeinfo(struct watch_time_s *timeinfo)
 	__get_timeinfo(timeinfo);
 }
 
+EXPORT_API const char *watch_core_get_appid()
+{
+	return priv.appid;
+}
