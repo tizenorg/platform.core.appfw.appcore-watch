@@ -45,7 +45,7 @@ pkg_check_modules(pkg_watch REQUIRED
 		vconf-internal-keys
 		libtzplatform-config
 		capi-appfw-widget-application
-		icu-uc
+		icu-i18n
 		)
 FOREACH(flag ${pkg_watch_CFLAGS})
 	SET(EXTRA_CFLAGS_watch "${EXTRA_CFLAGS_watch} ${flag}")
@@ -55,7 +55,7 @@ ADD_LIBRARY(${APPCORE_WATCH} SHARED ${SRCS_watch})
 SET_TARGET_PROPERTIES(${APPCORE_WATCH} PROPERTIES SOVERSION ${VERSION_MAJOR})
 SET_TARGET_PROPERTIES(${APPCORE_WATCH} PROPERTIES VERSION ${VERSION})
 SET_TARGET_PROPERTIES(${APPCORE_WATCH} PROPERTIES COMPILE_FLAGS ${EXTRA_CFLAGS_watch})
-TARGET_LINK_LIBRARIES(${APPCORE_WATCH} ${pkg_watch_LDFLAGS} "-ldl")
+TARGET_LINK_LIBRARIES(${APPCORE_WATCH} ${pkg_watch_LDFLAGS} "-ldl -Wl,--no-undefined")
 
 CONFIGURE_FILE(${APPCORE_WATCH}.pc.in ${APPCORE_WATCH}.pc @ONLY)
 
