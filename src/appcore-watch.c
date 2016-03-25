@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2015 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #define _GNU_SOURCE
 
 #include <errno.h>
@@ -26,19 +25,14 @@
 #include <assert.h>
 
 #include <bundle_internal.h>
-
 #include <Elementary.h>
-
 #include <app_control.h>
 #include <app_control_internal.h>
-
 #include <aul.h>
 #include <dlog.h>
 #include <vconf.h>
 #include <alarm.h>
 #include <glib-object.h>
-
-
 #include <widget_app.h>
 
 #include "appcore-watch.h"
@@ -59,20 +53,16 @@
 #include <unicode/udatpg.h>
 #include <unicode/ustring.h>
 
-#define WATCH_ID      			"internal://WATCH_ID"
-
-#define AUL_K_CALLER_APPID      "__AUL_CALLER_APPID__"
-#define APPID_BUFFER_MAX		255
-
-#define TIMEZONE_BUFFER_MAX		1024
-#define LOCAL_TIME_PATH			"/opt/etc/localtime"
-
+#define WATCH_ID "internal://WATCH_ID"
+#define AUL_K_CALLER_APPID "__AUL_CALLER_APPID__"
+#define APPID_BUFFER_MAX 255
+#define TIMEZONE_BUFFER_MAX 1024
+#define LOCAL_TIME_PATH "/opt/etc/localtime"
 #define ONE_SECOND  1000
 #define ONE_MINUTE  60
 #define ONE_HOUR    60
 
 static Ecore_Timer *watch_tick = NULL;
-
 static alarm_id_t alarm_id = 0;
 
 /**
@@ -109,7 +99,6 @@ enum watch_event {
 	WE_TERMINATE,
 	WE_MAX
 };
-
 
 static enum watch_core_event to_ae[SE_MAX] = {
 	WATCH_CORE_EVENT_UNKNOWN,	/* SE_UNKNOWN */
@@ -223,13 +212,16 @@ static void __watch_core_time_tick_cancel(void);
 
 static int __watch_core_ambient_tick(alarm_id_t id, void *data);
 
-static int __widget_create(const char *id, const char *content, int w, int h, void *data);
+static int __widget_create(const char *id, const char *content, int w, int h,
+		void *data);
 static int __widget_resize(const char *id, int w, int h, void *data);
-static int __widget_destroy(const char *id, widget_app_destroy_type_e reason, void *data);
+static int __widget_destroy(const char *id, widget_app_destroy_type_e reason,
+		void *data);
 static int __widget_pause(const char *id, void *data);
 static int __widget_resume(const char *id, void *data);
 
-extern int app_control_create_event(bundle *data, struct app_control_s **app_control);
+extern int app_control_create_event(bundle *data,
+		struct app_control_s **app_control);
 
 static void __exit_loop(void *data)
 {
@@ -240,117 +232,94 @@ static void __do_app(enum watch_event event, void *data, bundle * b)
 {
 	struct watch_priv *watch_data = data;
 	app_control_h app_control = NULL;
+	int r;
 
 	_ret_if(watch_data == NULL);
 
-	if (event == WE_TERMINATE)
-	{
+	if (event == WE_TERMINATE) {
 		watch_data->state = WS_DYING;
-		ecore_main_loop_thread_safe_call_sync((Ecore_Data_Cb)__exit_loop, NULL);
+		ecore_main_loop_thread_safe_call_sync(
+				(Ecore_Data_Cb)__exit_loop, NULL);
 		return;
 	}
 
 	_ret_if(watch_data->ops == NULL);
 
-	switch (event)
-	{
-		case WE_APPCONTROL:
-			_D("appcontrol request");
+	switch (event) {
+	case WE_APPCONTROL:
+		_D("appcontrol request");
+		if (app_control_create_event(b, &app_control) != 0) {
+			_E("failed to get the app_control handle");
+			return;
+		}
 
-			if (app_control_create_event(b, &app_control) != 0)
-			{
-				_E("failed to get the app_control handle");
-				return;
+		if (watch_data->ops->app_control)
+			watch_data->ops->app_control(app_control,
+					watch_data->ops->data);
+
+		app_control_destroy(app_control);
+		break;
+	case WE_PAUSE:
+		_D("WE_PAUSE");
+		if (watch_data->state == WS_CREATED) {
+			_E("Invalid state");
+			return;
+		}
+
+		/* Handling the ambient mode */
+		if (watch_data->ambient_mode)
+			watch_data->ambient_mode_skip_resume = 1;
+
+		/* Cancel the time_tick callback */
+		__watch_core_time_tick_cancel();
+		if (watch_data->state == WS_RUNNING) {
+			if (watch_data->ops->pause) {
+				r = priv.ops->pause(priv.ops->data);
+				if (r < 0)
+					_E("pause() fails");
 			}
+		}
 
-			if (watch_data->ops->app_control)
-				watch_data->ops->app_control(app_control, watch_data->ops->data);
+		watch_data->state = WS_PAUSED;
+		break;
+	case WE_RESUME:
+		_D("WE_RESUME");
 
-			app_control_destroy(app_control);
+		/* Handling the ambient mode */
+		if (watch_data->ambient_mode) {
+			watch_data->ambient_mode_skip_resume = 0;
+			return;
+		}
 
-			break;
-
-		case WE_PAUSE:
-			_D("WE_PAUSE");
-
-			if (watch_data->state == WS_CREATED)
-			{
-				_E("Invalid state");
-
-				return;
-			}
-
-			// Handling the ambient mode
-			if (watch_data->ambient_mode)
-			{
-				watch_data->ambient_mode_skip_resume = 1;
-			}
-
-			// Cancel the time_tick callback
-			__watch_core_time_tick_cancel();
-
-			if (watch_data->state == WS_RUNNING)
-			{
-
-				if (watch_data->ops->pause) {
-					int r = priv.ops->pause(priv.ops->data);
-					if (r < 0) {
-						_E("pause() fails");
-					}
-				}
-			}
-
-			watch_data->state = WS_PAUSED;
-			break;
-
-		case WE_RESUME:
-			_D("WE_RESUME");
-
-			// Handling the ambient mode
-			if (watch_data->ambient_mode)
-			{
-				watch_data->ambient_mode_skip_resume = 0;
-				return;
-			}
-
-			if (watch_data->state == WS_PAUSED || watch_data->state == WS_CREATED)
-			{
-				if (watch_data->ops->resume) {
-					int r = priv.ops->resume(priv.ops->data);
-					if (r < 0) {
-						_E("resume() fails");
-					}
-				}
+		if (watch_data->state == WS_PAUSED ||
+				watch_data->state == WS_CREATED) {
+			if (watch_data->ops->resume) {
+				r = priv.ops->resume(priv.ops->data);
+				if (r < 0)
+					_E("resume() fails");
 			}
 
 			watch_data->state = WS_RUNNING;
 
-			// Set the time tick callback
-			if (!watch_tick)
-			{
+			/* Set the time tick callback */
+			if (!watch_tick) {
 				__watch_core_time_tick(NULL);
-			}
-			else
-			{
+			} else {
 				__watch_core_time_tick_cancel();
 				__watch_core_time_tick(NULL);
 			}
+		}
+		break;
+	case WE_AMBIENT:
+		_D("WE_AMBIENT");
+		if (priv.ops && priv.ops->ambient_changed)
+			priv.ops->ambient_changed(watch_data->ambient_mode,
+					priv.ops->data);
 
-			break;
-
-		case WE_AMBIENT:
-			_D("WE_AMBIENT");
-
-			if (priv.ops && priv.ops->ambient_changed) {
-				priv.ops->ambient_changed(watch_data->ambient_mode, priv.ops->data);
-			}
-
-			break;
-
-		default:
-			break;
+		break;
+	default:
+		break;
 	}
-
 }
 
 static struct watch_ops w_ops = {
@@ -358,21 +327,18 @@ static struct watch_ops w_ops = {
 	.cb_app = __do_app,
 };
 
-char* __get_domain_name(const char *appid)
+static char *__get_domain_name(const char *appid)
 {
 	char *name_token = NULL;
 
-	if (appid == NULL)
-	{
+	if (appid == NULL) {
 		_E("appid is NULL");
 		return NULL;
 	}
 
-	// com.vendor.name -> name
+	/* com.vendor.name -> name */
 	name_token = strrchr(appid, '.');
-
-	if (name_token == NULL)
-	{
+	if (name_token == NULL) {
 		_E("appid is invalid");
 		return NULL;
 	}
@@ -382,7 +348,8 @@ char* __get_domain_name(const char *appid)
 	return strdup(name_token);
 }
 
-static int __set_data(struct watch_priv *watch, const char *appid, struct watchcore_ops *ops)
+static int __set_data(struct watch_priv *watch, const char *appid,
+		struct watchcore_ops *ops)
 {
 	if (ops == NULL) {
 		errno = EINVAL;
@@ -390,7 +357,6 @@ static int __set_data(struct watch_priv *watch, const char *appid, struct watchc
 	}
 
 	watch->ops = ops;
-
 	watch->appid = strdup(appid);
 	watch->name = __get_domain_name(appid);
 	watch->pid = getpid();
@@ -398,7 +364,7 @@ static int __set_data(struct watch_priv *watch, const char *appid, struct watchc
 	return 0;
 }
 
-static int __watch_appcontrol(void *data, bundle * k)
+static int __watch_appcontrol(void *data, bundle *k)
 {
 	struct watch_core *wc = data;
 	_retv_if(wc == NULL || wc->ops == NULL, -1);
@@ -423,22 +389,19 @@ static int __watch_terminate(void *data)
 
 static int __sys_do_default(struct watch_core *wc, enum sys_event event)
 {
-	int r;
-
 	switch (event) {
 	case SE_LOWBAT:
 		/*r = __def_lowbatt(wc);*/
-		r = 0;
 		break;
 	default:
-		r = 0;
 		break;
-	};
+	}
 
-	return r;
+	return 0;
 }
 
-static int __sys_do(struct watch_core *wc, void *event_info, enum sys_event event)
+static int __sys_do(struct watch_core *wc, void *event_info,
+		enum sys_event event)
 {
 	struct sys_op *op;
 
@@ -547,29 +510,25 @@ static void __vconf_cb(keynode_t *key, void *data)
 {
 	int i;
 	const char *name;
+	struct watch_priv *watch_data = data;
+	struct evt_ops *eo;
 
 	name = vconf_keynode_get_name(key);
 	_ret_if(name == NULL);
 
 	_D("vconf changed: %s", name);
 
-	// Check the time changed event
-	if (!strcmp(name, VCONFKEY_SYSTEM_TIME_CHANGED))
-	{
-		struct watch_priv *watch_data = data;
-
+	/* Check the time changed event */
+	if (!strcmp(name, VCONFKEY_SYSTEM_TIME_CHANGED)) {
 		_D("ambient_mode: %d", watch_data->ambient_mode);
-
 		if (watch_data->ambient_mode)
-		{
 			__watch_core_ambient_tick(0, NULL);
-		}
 
 		return;
 	}
 
 	for (i = 0; i < sizeof(evtops) / sizeof(evtops[0]); i++) {
-		struct evt_ops *eo = &evtops[i];
+		eo = &evtops[i];
 
 		switch (eo->type) {
 		case _CB_VCONF:
@@ -588,19 +547,23 @@ static int __add_vconf(struct watch_core *wc, enum sys_event se)
 
 	switch (se) {
 	case SE_LOWMEM:
-		r = vconf_notify_key_changed(VCONFKEY_SYSMAN_LOW_MEMORY, __vconf_cb, wc);
+		r = vconf_notify_key_changed(VCONFKEY_SYSMAN_LOW_MEMORY,
+				__vconf_cb, wc);
 		break;
 	case SE_LOWBAT:
-		r = vconf_notify_key_changed(VCONFKEY_SYSMAN_BATTERY_STATUS_LOW, __vconf_cb, wc);
+		r = vconf_notify_key_changed(VCONFKEY_SYSMAN_BATTERY_STATUS_LOW,
+				__vconf_cb, wc);
 		break;
 	case SE_LANGCHG:
 		r = vconf_notify_key_changed(VCONFKEY_LANGSET, __vconf_cb, wc);
 		break;
 	case SE_REGIONCHG:
-		r = vconf_notify_key_changed(VCONFKEY_REGIONFORMAT, __vconf_cb, wc);
+		r = vconf_notify_key_changed(VCONFKEY_REGIONFORMAT, __vconf_cb,
+				wc);
 		break;
 	case SE_TIMECHG:
-		r = vconf_notify_key_changed(VCONFKEY_SYSTEM_TIME_CHANGED, __vconf_cb, &priv);
+		r = vconf_notify_key_changed(VCONFKEY_SYSTEM_TIME_CHANGED,
+				__vconf_cb, &priv);
 		break;
 	default:
 		r = -1;
@@ -616,10 +579,12 @@ static int __del_vconf(enum sys_event se)
 
 	switch (se) {
 	case SE_LOWMEM:
-		r = vconf_ignore_key_changed(VCONFKEY_SYSMAN_LOW_MEMORY, __vconf_cb);
+		r = vconf_ignore_key_changed(VCONFKEY_SYSMAN_LOW_MEMORY,
+				__vconf_cb);
 		break;
 	case SE_LOWBAT:
-		r = vconf_ignore_key_changed(VCONFKEY_SYSMAN_BATTERY_STATUS_LOW, __vconf_cb);
+		r = vconf_ignore_key_changed(VCONFKEY_SYSMAN_BATTERY_STATUS_LOW,
+				__vconf_cb);
 		break;
 	case SE_LANGCHG:
 		r = vconf_ignore_key_changed(VCONFKEY_LANGSET, __vconf_cb);
@@ -628,7 +593,8 @@ static int __del_vconf(enum sys_event se)
 		r = vconf_ignore_key_changed(VCONFKEY_REGIONFORMAT, __vconf_cb);
 		break;
 	case SE_TIMECHG:
-		r = vconf_ignore_key_changed(VCONFKEY_SYSTEM_TIME_CHANGED, __vconf_cb);
+		r = vconf_ignore_key_changed(VCONFKEY_SYSTEM_TIME_CHANGED,
+				__vconf_cb);
 		break;
 	default:
 		r = -1;
@@ -677,7 +643,7 @@ static int __aul_handler(aul_type type, bundle *b, void *data)
 }
 
 EXPORT_API int watch_core_set_event_callback(enum watch_core_event event,
-					  int (*cb) (void *, void *), void *data)
+		int (*cb) (void *, void *), void *data)
 {
 	struct watch_core *wc = &core;
 	struct sys_op *op;
@@ -717,40 +683,38 @@ EXPORT_API int watch_core_set_event_callback(enum watch_core_event event,
 	return 0;
 }
 
-static char* __get_timezone(void)
+static char *__get_timezone(void)
 {
 	char buf[TIMEZONE_BUFFER_MAX] = {0,};
-
-	ssize_t len = readlink(LOCAL_TIME_PATH, buf, sizeof(buf)-1);
+	ssize_t len = readlink(LOCAL_TIME_PATH, buf, sizeof(buf) - 1);
 
 	if (len != -1)
-	{
 		buf[len] = '\0';
-	}
-	else  // handle error condition
-	{
+	else  /* handle error condition */
 		return vconf_get_str(VCONFKEY_SETAPPL_TIMEZONE_ID);
-	}
 
-	return strdup(buf+20);
+	return strdup(buf + 20);
 }
 
 static void __get_timeinfo(struct watch_time_s *timeinfo)
 {
 	UErrorCode status = U_ZERO_ERROR;
-
-	// UTC time
 	struct timeval current;
+	char *timezone;
+	UCalendar *cal;
+
+	/* UTC time */
 	gettimeofday(&current, NULL);
 	timeinfo->timestamp = current.tv_sec;
 
-	// Time zone
-	char* timezone = __get_timezone();
+	/* Time zone */
+	timezone = __get_timezone();
 	UChar utf16_timezone[64] = {0};
 	u_uastrncpy(utf16_timezone, timezone, 64);
 
-	// Local time
-	UCalendar *cal = ucal_open(utf16_timezone, u_strlen(utf16_timezone), uloc_getDefault(), UCAL_TRADITIONAL, &status);
+	/* Local time */
+	cal = ucal_open(utf16_timezone, u_strlen(utf16_timezone),
+			uloc_getDefault(), UCAL_TRADITIONAL, &status);
 	if (cal == NULL)
 		return;
 
@@ -773,7 +737,7 @@ static void __get_timeinfo(struct watch_time_s *timeinfo)
 }
 
 int watch_core_init(const char *name, const struct watch_ops *ops,
-			    	int argc, char **argv)
+		int argc, char **argv)
 {
 	int r;
 
@@ -814,7 +778,7 @@ int watch_core_init(const char *name, const struct watch_ops *ops,
 
 	return 0;
 
- err:
+err:
 	return -1;
 }
 
@@ -823,6 +787,7 @@ static void __watch_core_alarm_init(void)
 	int r = 0;
 	int pid = getpid();
 	char appid[APPID_BUFFER_MAX] = {0,};
+
 	r = aul_app_get_appid_bypid(pid, appid, APPID_BUFFER_MAX);
 	if (r < 0) {
 		_E("fail to get the appid from the pid : %d", pid);
@@ -831,16 +796,14 @@ static void __watch_core_alarm_init(void)
 
 	r = alarmmgr_init(appid);
 	if (r < 0) {
-		_E("fail to alarmmgr_init : error_code : %d",r);
+		_E("fail to alarmmgr_init : error_code : %d", r);
 		assert(0);
 	}
-
 }
 
 static void __watch_core_time_tick_cancel(void)
 {
-	if (watch_tick)
-	{
+	if (watch_tick) {
 		ecore_timer_del(watch_tick);
 		watch_tick = NULL;
 	}
@@ -848,19 +811,19 @@ static void __watch_core_time_tick_cancel(void)
 
 static Eina_Bool __watch_core_time_tick(void *data)
 {
+	struct watch_time_s timeinfo;
+	double sec;
+
 	_D("state: %d", priv.state);
 
-	if (priv.ops && priv.ops->time_tick && priv.state != WS_PAUSED)
-	{
-		struct watch_time_s timeinfo;
+	if (priv.ops && priv.ops->time_tick && priv.state != WS_PAUSED) {
 		__get_timeinfo(&timeinfo);
 
-		// Set a next timer
-		double sec = (ONE_SECOND - timeinfo.millisecond) / 1000.0;
+		/* Set a next timer */
+		sec = (ONE_SECOND - timeinfo.millisecond) / 1000.0;
 		watch_tick = ecore_timer_add(sec, __watch_core_time_tick, NULL);
 
 		_D("next time tick: %f", sec);
-
 		priv.ops->time_tick(&timeinfo, priv.ops->data);
 	}
 
@@ -869,28 +832,26 @@ static Eina_Bool __watch_core_time_tick(void *data)
 
 static int __watch_core_ambient_tick(alarm_id_t id, void *data)
 {
+	struct watch_time_s timeinfo;
+
 	_D("state: %d", priv.state);
-
-	if (priv.ops && priv.ops->ambient_tick && priv.state != WS_RUNNING)
-	{
-		struct watch_time_s timeinfo;
+	if (priv.ops && priv.ops->ambient_tick && priv.state != WS_RUNNING) {
 		__get_timeinfo(&timeinfo);
-
 		priv.ops->ambient_tick(&timeinfo, priv.ops->data);
 	}
 
 	return 0;
 }
 
-static int __widget_create(const char *id, const char *content, int w, int h, void *data)
+static int __widget_create(const char *id, const char *content, int w, int h,
+		void *data)
 {
+	int r;
 	_D("widget_create");
 
-	if (priv.ops && priv.ops->create)
-	{
-		int r = priv.ops->create(w, h, priv.ops->data);
-		if (r < 0)
-		{
+	if (priv.ops && priv.ops->create) {
+		r = priv.ops->create(w, h, priv.ops->data);
+		if (r < 0) {
 			_E("Failed to initialize the application");
 			__exit_loop(NULL);
 		}
@@ -900,7 +861,7 @@ static int __widget_create(const char *id, const char *content, int w, int h, vo
 
 	_D("widget_create done");
 
-	// Alarm init
+	/* Alarm init */
 	__watch_core_alarm_init();
 
 	return WIDGET_ERROR_NONE;
@@ -912,7 +873,8 @@ static int __widget_resize(const char *id, int w, int h, void *data)
 	return WIDGET_ERROR_NONE;
 }
 
-static int __widget_destroy(const char *id, widget_app_destroy_type_e reason, void *data)
+static int __widget_destroy(const char *id, widget_app_destroy_type_e reason,
+		void *data)
 {
 	_D("widget_destory");
 
@@ -941,24 +903,23 @@ static int __widget_resume(const char *id, void *data)
 
 static int __signal_alpm_handler(int ambient, void *data)
 {
+	struct watch_time_s timeinfo;
+	int sec;
+	int r;
+
 	_D("_signal_alpm_handler: ambient: %d, state: %d", ambient, priv.state);
 
-	if (priv.ambient_mode == ambient)
-	{
+	if (priv.ambient_mode == ambient) {
 		_E("invalid state");
 		return 0;
 	}
 
-	// Enter the ambient mode
-	if (ambient)
-	{
-		if (priv.state != WS_PAUSED)
-		{
+	/* Enter the ambient mode */
+	if (ambient) {
+		if (priv.state != WS_PAUSED) {
 			__do_app(WE_PAUSE, &priv, NULL);
 			priv.ambient_mode_skip_resume = 0;
-		}
-		else
-		{
+		} else {
 			priv.ambient_mode_skip_resume = 1;
 		}
 
@@ -966,43 +927,37 @@ static int __signal_alpm_handler(int ambient, void *data)
 		__do_app(WE_AMBIENT, &priv, NULL);
 
 		if (priv.ops && priv.ops->ambient_tick) {
-			struct watch_time_s timeinfo;
 			__get_timeinfo(&timeinfo);
-
-			int sec = ONE_MINUTE - timeinfo.second;
+			sec = ONE_MINUTE - timeinfo.second;
 
 			_D("next time tick: %d", sec);
 
-			// Set a next alarm
-			int r = alarmmgr_add_alarm_withcb(ALARM_TYPE_VOLATILE, sec, 60,
-					__watch_core_ambient_tick, data, &alarm_id);
-			if (r < 0) {
-				_E("fail to alarmmgr_add_alarm_withcb : error_code : %d",r);
-			}
+			/* Set a next alarm */
+			r = alarmmgr_add_alarm_withcb(ALARM_TYPE_VOLATILE, sec,
+					60, __watch_core_ambient_tick, data,
+					&alarm_id);
+			if (r < 0)
+				_E("fail to alarmmgr_add_alarm_withcb : "
+						"error_code : %d", r);
 
 			priv.ops->ambient_tick(&timeinfo, priv.ops->data);
 		}
 
-		// Send a update done signal
+		/* Send a update done signal */
 		_watch_core_send_alpm_update_done();
 
-	}
-	// Exit the ambient mode
-	else
-	{
+	} else { /* Exit the ambient mode */
 		priv.ambient_mode = 0;
 		__do_app(WE_AMBIENT, &priv, NULL);
 
 		_D("Resume check: %d", priv.ambient_mode_skip_resume);
-		if (!priv.ambient_mode_skip_resume)
-		{
+		if (!priv.ambient_mode_skip_resume) {
 			_D("Call the resume after ambient mode changed");
 			__do_app(WE_RESUME, &priv, NULL);
 		}
 
-		// Disable alarm
-		if (alarm_id)
-		{
+		/* Disable alarm */
+		if (alarm_id) {
 			alarmmgr_remove_alarm(alarm_id);
 			alarm_id = 0;
 		}
@@ -1018,7 +973,15 @@ static void __watch_core_signal_init(void)
 
 static int __before_loop(struct watch_priv *watch, int argc, char **argv)
 {
-	int r = 0;
+	int r;
+	bundle *kb = NULL;
+	char *wayland_display = NULL;
+	char *xdg_runtime_dir = NULL;
+	char *width_str = NULL;
+	char *height_str = NULL;
+	int width = 360;
+	int height = 360;
+
 
 	if (argc <= 0 || argv == NULL) {
 		errno = EINVAL;
@@ -1033,13 +996,6 @@ static int __before_loop(struct watch_priv *watch, int argc, char **argv)
 	g_type_init();
 #endif
 
-	bundle *kb = NULL;
-	char *wayland_display = NULL;
-	char *xdg_runtime_dir = NULL;
-	char *width_str = NULL;
-	char *height_str = NULL;
-	int width = 360;
-	int height = 360;
 	kb = bundle_import_from_argv(argc, argv);
 	if (kb) {
 		bundle_get_str(kb, "XDG_RUNTIME_DIR", &xdg_runtime_dir);
@@ -1050,14 +1006,16 @@ static int __before_loop(struct watch_priv *watch, int argc, char **argv)
 		if (xdg_runtime_dir) {
 			_E("senenv: %s", xdg_runtime_dir);
 			setenv("XDG_RUNTIME_DIR", xdg_runtime_dir, 1);
-		} else
+		} else {
 			_E("failed to get xdgruntimedir");
+		}
 
 		if (wayland_display) {
 			_E("setenv: %s", wayland_display);
 			setenv("WAYLAND_DISPLAY", wayland_display, 1);
-		} else
+		} else {
 			_E("failed to get waylanddisplay");
+		}
 
 		if (width_str)
 			width = atoi(width_str);
@@ -1066,8 +1024,9 @@ static int __before_loop(struct watch_priv *watch, int argc, char **argv)
 			height = atoi(height_str);
 
 		bundle_free(kb);
-	} else
+	} else {
 		_E("failed to get launch argv");
+	}
 
 	elm_init(argc, argv);
 
@@ -1098,7 +1057,6 @@ static void __after_loop(struct watch_priv *watch)
 
 	alarmmgr_fini();
 }
-
 
 EXPORT_API int watch_core_main(const char *appid, int argc, char **argv,
 				struct watchcore_ops *ops)
@@ -1140,3 +1098,4 @@ EXPORT_API const char *watch_core_get_appid()
 {
 	return priv.appid;
 }
+
