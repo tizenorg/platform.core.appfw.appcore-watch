@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2015 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 
 #ifndef __APPFW_WATCH_LOG_H__
 #define __APPFW_WATCH_LOG_H__
@@ -77,5 +76,4 @@
 		} \
 	} while (0)
 
-
-#endif //__APPFW_WATCH_LOG_H_
+#endif /*__APPFW_WATCH_LOG_H_ */
