@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2015 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 
 #ifndef __TIZEN_APPFW_WATCH_APP_H__
 #define __TIZEN_APPFW_WATCH_APP_H__
@@ -162,8 +161,7 @@ typedef void (*watch_app_ambient_changed_cb) (bool ambient_mode, void *user_data
  * @see watch_app_ambient_changed_cb()
  * @see watch_app_terminate_cb()
  */
-typedef struct
-{
+typedef struct {
 	watch_app_create_cb create; /**< This callback function is called at the start of the application. */
 	watch_app_control_cb app_control; /**< This callback function is called when another application sends the launch request to the application. */
 	watch_app_pause_cb pause; /**< This callback function is called each time the application is completely obscured by another application and becomes invisible to the user. */
@@ -172,7 +170,6 @@ typedef struct
 	watch_app_time_tick_cb time_tick; /**< This callback function is called at each second. */
 	watch_app_ambient_tick_cb ambient_tick; /**< This callback function is called at each minute in ambient mode. */
 	watch_app_ambient_changed_cb ambient_changed; /**< This callback function is called when the device enters or exits ambient mode. */
-
 } watch_app_lifecycle_callback_s;
 
 
