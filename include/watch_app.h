@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2015 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 
 #ifndef __TIZEN_APPFW_WATCH_APP_H__
 #define __TIZEN_APPFW_WATCH_APP_H__
@@ -36,7 +35,7 @@ extern "C" {
  * @brief watch_time_h watch_time handle
  * @since_tizen 2.3.1
  */
-typedef struct _watch_time_s* watch_time_h;
+typedef struct _watch_time_s *watch_time_h;
 
 /**
  * @brief Called when the application starts.
@@ -162,8 +161,7 @@ typedef void (*watch_app_ambient_changed_cb) (bool ambient_mode, void *user_data
  * @see watch_app_ambient_changed_cb()
  * @see watch_app_terminate_cb()
  */
-typedef struct
-{
+typedef struct {
 	watch_app_create_cb create; /**< This callback function is called at the start of the application. */
 	watch_app_control_cb app_control; /**< This callback function is called when another application sends the launch request to the application. */
 	watch_app_pause_cb pause; /**< This callback function is called each time the application is completely obscured by another application and becomes invisible to the user. */
@@ -172,7 +170,6 @@ typedef struct
 	watch_app_time_tick_cb time_tick; /**< This callback function is called at each second. */
 	watch_app_ambient_tick_cb ambient_tick; /**< This callback function is called at each minute in ambient mode. */
 	watch_app_ambient_changed_cb ambient_changed; /**< This callback function is called when the device enters or exits ambient mode. */
-
 } watch_app_lifecycle_callback_s;
 
 
@@ -268,7 +265,7 @@ void watch_app_exit(void);
  * @retval #APP_ERROR_OUT_OF_MEMORY Out of Memory
  * @retval #APP_ERROR_NONE Successful
  */
-int watch_time_get_current_time(watch_time_h* watch_time);
+int watch_time_get_current_time(watch_time_h *watch_time);
 
 /**
  * @brief Deletes the watch time handle and releases all its resources.
@@ -449,3 +446,4 @@ int watch_time_get_time_zone(watch_time_h watch_time, char **time_zone_id);
 #endif
 
 #endif /* __TIZEN_APPFW_WATCH_APP_H__ */
+

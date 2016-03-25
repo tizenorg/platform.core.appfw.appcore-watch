@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2015 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-
 #ifndef __APPCORE_WATCH_SIGNAL_H__
 #define __APPCORE_WATCH_SIGNAL_H__
-
 
 #include <dbus/dbus.h>
 
@@ -25,16 +23,15 @@
 extern "C" {
 #endif
 
-#define ALPM_VIEWER_PATH 				"/Org/Tizen/Coreapps/Alpmviewer/Clockdraw"
-#define ALPM_VIEWER_INTERFACE 			"org.tizen.coreapps.alpmviewer.clockdraw"
-#define ALPM_VIEWER_SIGNAL_DRAW_DONE	"drawdone"
+#define ALPM_VIEWER_PATH "/Org/Tizen/Coreapps/Alpmviewer/Clockdraw"
+#define ALPM_VIEWER_INTERFACE "org.tizen.coreapps.alpmviewer.clockdraw"
+#define ALPM_VIEWER_SIGNAL_DRAW_DONE "drawdone"
 
-
-#define DEVICED_PATH					"/Org/Tizen/System/DeviceD"
-#define DEVICED_INTERFACE				"org.tizen.system.deviced"
-#define DEVICED_SIGNAL_HOME_SCREEN		"HomeScreen"
-#define CLOCK_START						"clockbegin"
-#define CLOCK_STOP						"clockstop"
+#define DEVICED_PATH "/Org/Tizen/System/DeviceD"
+#define DEVICED_INTERFACE "org.tizen.system.deviced"
+#define DEVICED_SIGNAL_HOME_SCREEN "HomeScreen"
+#define CLOCK_START "clockbegin"
+#define CLOCK_STOP "clockstop"
 
 int _watch_core_listen_alpm_handler(int (*func) (int, void *), void *data);
 int _watch_core_send_alpm_update_done(void);
@@ -44,3 +41,4 @@ int _watch_core_send_alpm_update_done(void);
 #endif
 
 #endif /* __APPCORE_WATCH_SIGNAL_H__ */
+

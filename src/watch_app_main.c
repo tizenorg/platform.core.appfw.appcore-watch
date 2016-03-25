@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2015 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #include <stdlib.h>
 
 #include <bundle.h>
@@ -22,7 +21,6 @@
 #include <dlog.h>
 #include <app_common.h>
 #include <app_control.h>
-
 #include <Eina.h>
 #include <Evas.h>
 #include <Elementary.h>
@@ -37,12 +35,12 @@
 
 #define LOG_TAG "CAPI_WATCH_APPLICATION"
 
-#define WATCH_ID			"internal://WATCH_ID"
+#define WATCH_ID "internal://WATCH_ID"
 
 typedef enum {
-	WATCH_APP_STATE_NOT_RUNNING, // The application has been launched or was running but was terminated
-	WATCH_APP_STATE_CREATING, // The application is initializing the resources on watch_app_create_cb callback
-	WATCH_APP_STATE_RUNNING, // The application is running in the foreground and background
+	WATCH_APP_STATE_NOT_RUNNING, /* The application has been launched or was running but was terminated */
+	WATCH_APP_STATE_CREATING, /* The application is initializing the resources on watch_app_create_cb callback */
+	WATCH_APP_STATE_RUNNING, /* The application is running in the foreground and background */
 } watch_app_state_e;
 
 typedef struct {
@@ -55,8 +53,7 @@ typedef struct {
 
 typedef watch_app_context_s *watch_app_context_h;
 
-struct _watch_time_s
-{
+struct _watch_time_s {
 	int year;
 	int month;
 	int day_of_week;
@@ -69,7 +66,6 @@ struct _watch_time_s
 	time_t timestamp;
 	char *timezone;
 };
-
 
 #define WATCH_APP_EVENT_MAX 5
 static Eina_List *handler_list[WATCH_APP_EVENT_MAX] = {NULL, };
@@ -154,7 +150,8 @@ static int _watch_core_lang_changed(void *event_info, void *data)
 	event.type = APP_EVENT_LANGUAGE_CHANGED;
 	event.value = event_info;
 
-	EINA_LIST_FOREACH(handler_list[APP_EVENT_LANGUAGE_CHANGED], l, handler) {
+	EINA_LIST_FOREACH(handler_list[APP_EVENT_LANGUAGE_CHANGED], l,
+			handler) {
 		handler->cb(&event, handler->data);
 	}
 
@@ -172,51 +169,60 @@ static int _watch_core_region_changed(void *event_info, void *data)
 	event.type = APP_EVENT_REGION_FORMAT_CHANGED;
 	event.value = event_info;
 
-	EINA_LIST_FOREACH(handler_list[APP_EVENT_REGION_FORMAT_CHANGED], l, handler) {
+	EINA_LIST_FOREACH(handler_list[APP_EVENT_REGION_FORMAT_CHANGED], l,
+			handler) {
 		handler->cb(&event, handler->data);
 	}
 
 	return APP_ERROR_NONE;
 }
 
-static void _watch_core_set_appcore_event_cb(struct watch_app_context *app_context)
+static void _watch_core_set_appcore_event_cb(
+		struct watch_app_context *app_context)
 {
-	watch_core_set_event_callback(WATCH_CORE_EVENT_LOW_MEMORY, _watch_core_low_memory, app_context);
-	watch_core_set_event_callback(WATCH_CORE_EVENT_LANG_CHANGE, _watch_core_lang_changed, app_context);
-	watch_core_set_event_callback(WATCH_CORE_EVENT_REGION_CHANGE, _watch_core_region_changed, app_context);
+	watch_core_set_event_callback(WATCH_CORE_EVENT_LOW_MEMORY,
+			_watch_core_low_memory, app_context);
+	watch_core_set_event_callback(WATCH_CORE_EVENT_LANG_CHANGE,
+			_watch_core_lang_changed, app_context);
+	watch_core_set_event_callback(WATCH_CORE_EVENT_REGION_CHANGE,
+			_watch_core_region_changed, app_context);
 
 	if (eina_list_count(handler_list[APP_EVENT_LOW_BATTERY]) > 0)
-		watch_core_set_event_callback(WATCH_CORE_EVENT_LOW_BATTERY, _watch_core_low_battery, app_context);
+		watch_core_set_event_callback(WATCH_CORE_EVENT_LOW_BATTERY,
+				_watch_core_low_battery, app_context);
 }
 
 static void _watch_core_unset_appcore_event_cb(void)
 {
 	watch_core_set_event_callback(WATCH_CORE_EVENT_LOW_MEMORY, NULL, NULL);
 	watch_core_set_event_callback(WATCH_CORE_EVENT_LANG_CHANGE, NULL, NULL);
-	watch_core_set_event_callback(WATCH_CORE_EVENT_REGION_CHANGE, NULL, NULL);
+	watch_core_set_event_callback(WATCH_CORE_EVENT_REGION_CHANGE, NULL,
+			NULL);
 
 	if (eina_list_count(handler_list[APP_EVENT_LOW_BATTERY]) > 0)
-		watch_core_set_event_callback(WATCH_CORE_EVENT_LOW_BATTERY, NULL, NULL);
+		watch_core_set_event_callback(WATCH_CORE_EVENT_LOW_BATTERY,
+				NULL, NULL);
 }
 
 static int _watch_core_create(int w, int h, void *data)
 {
-	_W("_watch_core_create");
 	struct watch_app_context *app_context = data;
 	watch_app_create_cb create_cb;
 
-	if (app_context == NULL) {
-		return watch_app_error(APP_ERROR_INVALID_CONTEXT, __FUNCTION__, NULL);
-	}
+	_W("_watch_core_create");
+
+	if (app_context == NULL)
+		return watch_app_error(APP_ERROR_INVALID_CONTEXT, __FUNCTION__,
+				NULL);
 
 	watch_core_initialized = 1;
 	_watch_core_set_appcore_event_cb(app_context);
 
 	create_cb = app_context->callback->create;
 
-	if (create_cb == NULL || create_cb(w, h, app_context->data) == false) {
-		return watch_app_error(APP_ERROR_INVALID_CONTEXT, __FUNCTION__, "watch_app_create_cb() returns false");
-	}
+	if (create_cb == NULL || create_cb(w, h, app_context->data) == false)
+		return watch_app_error(APP_ERROR_INVALID_CONTEXT, __FUNCTION__,
+				"watch_app_create_cb() returns false");
 
 	app_context->state = WATCH_APP_STATE_RUNNING;
 
@@ -225,12 +231,14 @@ static int _watch_core_create(int w, int h, void *data)
 
 static int _watch_core_control(app_control_h app_control, void *data)
 {
-	_W("_watch_core_control");
 	struct watch_app_context *app_context = data;
 	watch_app_control_cb app_control_cb;
 
+	_W("_watch_core_control");
+
 	if (app_context == NULL)
-		return watch_app_error(APP_ERROR_INVALID_CONTEXT, __FUNCTION__, NULL);
+		return watch_app_error(APP_ERROR_INVALID_CONTEXT, __FUNCTION__,
+				NULL);
 
 	app_control_cb = app_context->callback->app_control;
 
@@ -242,12 +250,14 @@ static int _watch_core_control(app_control_h app_control, void *data)
 
 static int _watch_core_pause(void *data)
 {
-	_W("_watch_core_pause");
 	struct watch_app_context *app_context = data;
 	watch_app_pause_cb pause_cb;
 
+	_W("_watch_core_pause");
+
 	if (app_context == NULL)
-		return watch_app_error(APP_ERROR_INVALID_CONTEXT, __FUNCTION__, NULL);
+		return watch_app_error(APP_ERROR_INVALID_CONTEXT, __FUNCTION__,
+				NULL);
 
 	pause_cb = app_context->callback->pause;
 
@@ -259,12 +269,14 @@ static int _watch_core_pause(void *data)
 
 static int _watch_core_resume(void *data)
 {
-	_W("_watch_core_resume");
 	struct watch_app_context *app_context = data;
 	watch_app_resume_cb resume_cb;
 
+	_W("_watch_core_resume");
+
 	if (app_context == NULL)
-		return watch_app_error(APP_ERROR_INVALID_CONTEXT, __FUNCTION__, NULL);
+		return watch_app_error(APP_ERROR_INVALID_CONTEXT, __FUNCTION__,
+				NULL);
 
 	resume_cb = app_context->callback->resume;
 
@@ -276,12 +288,14 @@ static int _watch_core_resume(void *data)
 
 static int _watch_core_terminate(void *data)
 {
-	_W("_watch_core_terminate");
 	struct watch_app_context *app_context = data;
 	watch_app_terminate_cb terminate_cb;
 
+	_W("_watch_core_terminate");
+
 	if (app_context == NULL)
-		return watch_app_error(APP_ERROR_INVALID_CONTEXT, __FUNCTION__, NULL);
+		return watch_app_error(APP_ERROR_INVALID_CONTEXT, __FUNCTION__,
+				NULL);
 
 	terminate_cb = app_context->callback->terminate;
 
@@ -298,9 +312,10 @@ static int _watch_core_terminate(void *data)
 
 static void _watch_core_time_tick(void *watchtime, void *data)
 {
-	_I("_watch_core_time_tick");
 	struct watch_app_context *app_context = data;
 	watch_app_time_tick_cb time_tick_cb;
+
+	_I("_watch_core_time_tick");
 
 	if (app_context == NULL)
 		return;
@@ -313,9 +328,10 @@ static void _watch_core_time_tick(void *watchtime, void *data)
 
 static void _watch_core_ambient_tick(void *watchtime, void *data)
 {
-	_W("_watch_core_ambient_tick");
 	struct watch_app_context *app_context = data;
 	watch_app_ambient_tick_cb ambient_tick_cb;
+
+	_W("_watch_core_ambient_tick");
 
 	if (app_context == NULL)
 		return;
@@ -328,9 +344,10 @@ static void _watch_core_ambient_tick(void *watchtime, void *data)
 
 static void _watch_core_ambient_changed(int ambient, void *data)
 {
-	_W("_watch_core_ambient_changed: %d", ambient);
 	struct watch_app_context *app_context = data;
 	watch_app_ambient_changed_cb ambient_changed_cb;
+
+	_W("_watch_core_ambient_changed: %d", ambient);
 
 	if (app_context == NULL)
 		return;
@@ -342,7 +359,8 @@ static void _watch_core_ambient_changed(int ambient, void *data)
 }
 
 
-EXPORT_API int watch_app_main(int argc, char **argv, watch_app_lifecycle_callback_s *callback, void *user_data)
+EXPORT_API int watch_app_main(int argc, char **argv,
+		watch_app_lifecycle_callback_s *callback, void *user_data)
 {
 	struct watch_app_context app_context = {
 		.appid = NULL,
@@ -364,16 +382,22 @@ EXPORT_API int watch_app_main(int argc, char **argv, watch_app_lifecycle_callbac
 	};
 
 	if (argc <= 0 || argv == NULL || callback == NULL)
-		return watch_app_error(APP_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
+		return watch_app_error(APP_ERROR_INVALID_PARAMETER,
+				__FUNCTION__, NULL);
 
 	if (callback->create == NULL)
-		return watch_app_error(APP_ERROR_INVALID_PARAMETER, __FUNCTION__, "watch_app_create_cb() callback must be registered");
+		return watch_app_error(APP_ERROR_INVALID_PARAMETER,
+				__FUNCTION__,
+				"watch_app_create_cb() callback must be "
+				"registered");
 
 	if (app_context.state != WATCH_APP_STATE_NOT_RUNNING)
-		return watch_app_error(APP_ERROR_ALREADY_RUNNING, __FUNCTION__, NULL);
+		return watch_app_error(APP_ERROR_ALREADY_RUNNING, __FUNCTION__,
+				NULL);
 
 	if (app_get_id(&(app_context.appid)) != APP_ERROR_NONE)
-		return watch_app_error(APP_ERROR_INVALID_CONTEXT, __FUNCTION__, "failed to get the appid");
+		return watch_app_error(APP_ERROR_INVALID_CONTEXT, __FUNCTION__,
+				"failed to get the appid");
 
 	app_context.state = WATCH_APP_STATE_CREATING;
 
@@ -390,7 +414,9 @@ EXPORT_API void watch_app_exit(void)
 	watch_core_terminate();
 }
 
-EXPORT_API int watch_app_add_event_handler(app_event_handler_h *event_handler, app_event_type_e event_type, app_event_cb callback, void *user_data)
+EXPORT_API int watch_app_add_event_handler(app_event_handler_h *event_handler,
+		app_event_type_e event_type, app_event_cb callback,
+		void *user_data)
 {
 	app_event_handler_h handler;
 	Eina_List *l_itr;
@@ -401,19 +427,24 @@ EXPORT_API int watch_app_add_event_handler(app_event_handler_h *event_handler, a
 	}
 
 	if (event_handler == NULL || callback == NULL)
-		return watch_app_error(APP_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
+		return watch_app_error(APP_ERROR_INVALID_PARAMETER,
+				__FUNCTION__, NULL);
 
-	if (event_type < APP_EVENT_LOW_MEMORY || event_type > APP_EVENT_REGION_FORMAT_CHANGED)
-		return watch_app_error(APP_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
+	if (event_type < APP_EVENT_LOW_MEMORY ||
+			event_type > APP_EVENT_REGION_FORMAT_CHANGED)
+		return watch_app_error(APP_ERROR_INVALID_PARAMETER,
+				__FUNCTION__, NULL);
 
 	EINA_LIST_FOREACH(handler_list[event_type], l_itr, handler) {
 		if (handler->cb == callback)
-			return watch_app_error(APP_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
+			return watch_app_error(APP_ERROR_INVALID_PARAMETER,
+					__FUNCTION__, NULL);
 	}
 
 	handler = calloc(1, sizeof(struct app_event_handler));
 	if (!handler)
-		return watch_app_error(APP_ERROR_OUT_OF_MEMORY, __FUNCTION__, NULL);
+		return watch_app_error(APP_ERROR_OUT_OF_MEMORY, __FUNCTION__,
+				NULL);
 
 	handler->type = event_type;
 	handler->cb = callback;
@@ -422,9 +453,11 @@ EXPORT_API int watch_app_add_event_handler(app_event_handler_h *event_handler, a
 	if (watch_core_initialized
 			&& event_type == APP_EVENT_LOW_BATTERY
 			&& eina_list_count(handler_list[event_type]) == 0)
-		watch_core_set_event_callback(WATCH_CORE_EVENT_LOW_BATTERY, _watch_core_low_battery, NULL);
+		watch_core_set_event_callback(WATCH_CORE_EVENT_LOW_BATTERY,
+				_watch_core_low_battery, NULL);
 
-	handler_list[event_type] = eina_list_append(handler_list[event_type], handler);
+	handler_list[event_type] = eina_list_append(handler_list[event_type],
+			handler);
 
 	*event_handler = handler;
 
@@ -439,7 +472,8 @@ EXPORT_API int watch_app_remove_event_handler(app_event_handler_h event_handler)
 	Eina_List *l_next;
 
 	if (event_handler == NULL)
-		return watch_app_error(APP_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
+		return watch_app_error(APP_ERROR_INVALID_PARAMETER,
+				__FUNCTION__, NULL);
 
 	if (!_initialized) {
 		_I("handler list is not initialized");
@@ -447,36 +481,44 @@ EXPORT_API int watch_app_remove_event_handler(app_event_handler_h event_handler)
 	}
 
 	type = event_handler->type;
-	if (type < APP_EVENT_LOW_MEMORY || type > APP_EVENT_REGION_FORMAT_CHANGED)
-		return watch_app_error(APP_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
+	if (type < APP_EVENT_LOW_MEMORY ||
+			type > APP_EVENT_REGION_FORMAT_CHANGED)
+		return watch_app_error(APP_ERROR_INVALID_PARAMETER,
+				__FUNCTION__, NULL);
 
 	EINA_LIST_FOREACH_SAFE(handler_list[type], l_itr, l_next, handler) {
 		if (handler == event_handler) {
 			free(handler);
-			handler_list[type] = eina_list_remove_list(handler_list[type], l_itr);
+			handler_list[type] = eina_list_remove_list(
+					handler_list[type], l_itr);
 
 			if (watch_core_initialized
-					&& type == APP_EVENT_LOW_BATTERY
-					&& eina_list_count(handler_list[type]) == 0)
-				watch_core_set_event_callback(WATCH_CORE_EVENT_LOW_BATTERY, NULL, NULL);
+				&& type == APP_EVENT_LOW_BATTERY
+				&& eina_list_count(handler_list[type]) == 0)
+				watch_core_set_event_callback(
+						WATCH_CORE_EVENT_LOW_BATTERY,
+						NULL, NULL);
 
 			return APP_ERROR_NONE;
 		}
 	}
 
-	return watch_app_error(APP_ERROR_INVALID_PARAMETER, __FUNCTION__, "cannot find such handler");
+	return watch_app_error(APP_ERROR_INVALID_PARAMETER, __FUNCTION__,
+			"cannot find such handler");
 }
 
-EXPORT_API int watch_time_get_current_time(watch_time_h* watch_time)
+EXPORT_API int watch_time_get_current_time(watch_time_h *watch_time)
 {
-	if (watch_time == NULL)
-		return watch_app_error(APP_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
-
 	struct watch_time_s *time_info;
+
+	if (watch_time == NULL)
+		return watch_app_error(APP_ERROR_INVALID_PARAMETER,
+				__FUNCTION__, NULL);
 
 	time_info = calloc(1, sizeof(struct watch_time_s));
 	if (time_info == NULL)
-		return watch_app_error(APP_ERROR_OUT_OF_MEMORY, __FUNCTION__, "failed to create a handle");
+		return watch_app_error(APP_ERROR_OUT_OF_MEMORY, __FUNCTION__,
+				"failed to create a handle");
 
 	watch_core_get_timeinfo(time_info);
 
@@ -488,7 +530,8 @@ EXPORT_API int watch_time_get_current_time(watch_time_h* watch_time)
 EXPORT_API int watch_time_delete(watch_time_h watch_time)
 {
 	if (watch_time == NULL)
-		return watch_app_error(APP_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
+		return watch_app_error(APP_ERROR_INVALID_PARAMETER,
+				__FUNCTION__, NULL);
 
 	if (watch_time->timezone)
 		free(watch_time->timezone);
@@ -501,7 +544,8 @@ EXPORT_API int watch_time_delete(watch_time_h watch_time)
 EXPORT_API int watch_time_get_year(watch_time_h watch_time, int *year)
 {
 	if (watch_time == NULL)
-		return watch_app_error(APP_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
+		return watch_app_error(APP_ERROR_INVALID_PARAMETER,
+				__FUNCTION__, NULL);
 
 	*year = watch_time->year;
 	return APP_ERROR_NONE;
@@ -510,7 +554,8 @@ EXPORT_API int watch_time_get_year(watch_time_h watch_time, int *year)
 EXPORT_API int watch_time_get_month(watch_time_h watch_time, int *month)
 {
 	if (watch_time == NULL)
-		return watch_app_error(APP_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
+		return watch_app_error(APP_ERROR_INVALID_PARAMETER,
+				__FUNCTION__, NULL);
 
 	*month = watch_time->month;
 	return APP_ERROR_NONE;
@@ -519,16 +564,19 @@ EXPORT_API int watch_time_get_month(watch_time_h watch_time, int *month)
 EXPORT_API int watch_time_get_day(watch_time_h watch_time, int *day)
 {
 	if (watch_time == NULL)
-		return watch_app_error(APP_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
+		return watch_app_error(APP_ERROR_INVALID_PARAMETER,
+				__FUNCTION__, NULL);
 
 	*day = watch_time->day;
 	return APP_ERROR_NONE;
 }
 
-EXPORT_API int watch_time_get_day_of_week(watch_time_h watch_time, int *day_of_week)
+EXPORT_API int watch_time_get_day_of_week(watch_time_h watch_time,
+		int *day_of_week)
 {
 	if (watch_time == NULL)
-		return watch_app_error(APP_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
+		return watch_app_error(APP_ERROR_INVALID_PARAMETER,
+				__FUNCTION__, NULL);
 
 	*day_of_week = watch_time->day_of_week;
 	return APP_ERROR_NONE;
@@ -537,7 +585,8 @@ EXPORT_API int watch_time_get_day_of_week(watch_time_h watch_time, int *day_of_w
 EXPORT_API int watch_time_get_hour(watch_time_h watch_time, int *hour)
 {
 	if (watch_time == NULL)
-		return watch_app_error(APP_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
+		return watch_app_error(APP_ERROR_INVALID_PARAMETER,
+				__FUNCTION__, NULL);
 
 	*hour = watch_time->hour;
 	return APP_ERROR_NONE;
@@ -546,7 +595,8 @@ EXPORT_API int watch_time_get_hour(watch_time_h watch_time, int *hour)
 EXPORT_API int watch_time_get_hour24(watch_time_h watch_time, int *hour24)
 {
 	if (watch_time == NULL)
-		return watch_app_error(APP_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
+		return watch_app_error(APP_ERROR_INVALID_PARAMETER,
+				__FUNCTION__, NULL);
 
 	*hour24 = watch_time->hour24;
 	return APP_ERROR_NONE;
@@ -555,7 +605,8 @@ EXPORT_API int watch_time_get_hour24(watch_time_h watch_time, int *hour24)
 EXPORT_API int watch_time_get_minute(watch_time_h watch_time, int *minute)
 {
 	if (watch_time == NULL)
-		return watch_app_error(APP_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
+		return watch_app_error(APP_ERROR_INVALID_PARAMETER,
+				__FUNCTION__, NULL);
 
 	*minute = watch_time->minute;
 	return APP_ERROR_NONE;
@@ -564,47 +615,59 @@ EXPORT_API int watch_time_get_minute(watch_time_h watch_time, int *minute)
 EXPORT_API int watch_time_get_second(watch_time_h watch_time, int *second)
 {
 	if (watch_time == NULL)
-		return watch_app_error(APP_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
+		return watch_app_error(APP_ERROR_INVALID_PARAMETER,
+				__FUNCTION__, NULL);
 
 	*second = watch_time->second;
 	return APP_ERROR_NONE;
 }
 
-EXPORT_API int watch_time_get_millisecond(watch_time_h watch_time, int *millisecond)
+EXPORT_API int watch_time_get_millisecond(watch_time_h watch_time,
+		int *millisecond)
 {
 	if (watch_time == NULL)
-		return watch_app_error(APP_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
+		return watch_app_error(APP_ERROR_INVALID_PARAMETER,
+				__FUNCTION__, NULL);
 
 	*millisecond = watch_time->millisecond;
 	return APP_ERROR_NONE;
 }
 
-EXPORT_API int watch_time_get_utc_time(watch_time_h watch_time, struct tm *utc_time)
+EXPORT_API int watch_time_get_utc_time(watch_time_h watch_time,
+		struct tm *utc_time)
 {
-	if (watch_time == NULL || utc_time == NULL)
-		return watch_app_error(APP_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
+	time_t timestamp;
 
-	time_t timestamp = watch_time->timestamp;
+	if (watch_time == NULL || utc_time == NULL)
+		return watch_app_error(APP_ERROR_INVALID_PARAMETER,
+				__FUNCTION__, NULL);
+
+	timestamp = watch_time->timestamp;
 
 	gmtime_r(&timestamp, utc_time);
 
 	return APP_ERROR_NONE;
 }
 
-EXPORT_API int watch_time_get_utc_timestamp(watch_time_h watch_time, time_t *utc_timestamp)
+EXPORT_API int watch_time_get_utc_timestamp(watch_time_h watch_time,
+		time_t *utc_timestamp)
 {
 	if (watch_time == NULL)
-		return watch_app_error(APP_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
+		return watch_app_error(APP_ERROR_INVALID_PARAMETER,
+				__FUNCTION__, NULL);
 
 	*utc_timestamp = watch_time->timestamp;
 
 	return APP_ERROR_NONE;
 }
 
-EXPORT_API int watch_time_get_time_zone(watch_time_h watch_time, char **time_zone_id)
+EXPORT_API int watch_time_get_time_zone(watch_time_h watch_time,
+		char **time_zone_id)
 {
-	if (watch_time == NULL || watch_time->timezone == NULL || time_zone_id == NULL)
-		return watch_app_error(APP_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
+	if (watch_time == NULL || watch_time->timezone == NULL
+			|| time_zone_id == NULL)
+		return watch_app_error(APP_ERROR_INVALID_PARAMETER,
+				__FUNCTION__, NULL);
 
 	*time_zone_id = strdup(watch_time->timezone);
 
@@ -616,11 +679,13 @@ EXPORT_API int watch_app_get_elm_win(Evas_Object **win)
 	Evas_Object *ret_win;
 
 	if (win == NULL)
-		return watch_app_error(APP_ERROR_INVALID_PARAMETER, __FUNCTION__, NULL);
+		return watch_app_error(APP_ERROR_INVALID_PARAMETER,
+				__FUNCTION__, NULL);
 
 	ret_win = elm_win_add(NULL, watch_core_get_appid(), ELM_WIN_BASIC);
 	if (ret_win == NULL)
-		return watch_app_error(APP_ERROR_OUT_OF_MEMORY, __FUNCTION__, NULL);
+		return watch_app_error(APP_ERROR_OUT_OF_MEMORY, __FUNCTION__,
+				NULL);
 
 	*win = ret_win;
 	return APP_ERROR_NONE;
