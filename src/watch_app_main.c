@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2015 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,12 @@
  * limitations under the License.
  */
 
-
 #include <stdlib.h>
-
 #include <bundle.h>
 #include <aul.h>
 #include <dlog.h>
 #include <app_common.h>
 #include <app_control.h>
-
 #include <Eina.h>
 #include <Evas.h>
 #include <Elementary.h>
@@ -37,12 +34,12 @@
 
 #define LOG_TAG "CAPI_WATCH_APPLICATION"
 
-#define WATCH_ID			"internal://WATCH_ID"
+#define WATCH_ID "internal://WATCH_ID"
 
 typedef enum {
-	WATCH_APP_STATE_NOT_RUNNING, // The application has been launched or was running but was terminated
-	WATCH_APP_STATE_CREATING, // The application is initializing the resources on watch_app_create_cb callback
-	WATCH_APP_STATE_RUNNING, // The application is running in the foreground and background
+	WATCH_APP_STATE_NOT_RUNNING, /* The application has been launched or was running but was terminated */
+	WATCH_APP_STATE_CREATING, /* The application is initializing the resources on watch_app_create_cb callback */
+	WATCH_APP_STATE_RUNNING, /* The application is running in the foreground and background */
 } watch_app_state_e;
 
 typedef struct {
@@ -55,8 +52,7 @@ typedef struct {
 
 typedef watch_app_context_s *watch_app_context_h;
 
-struct _watch_time_s
-{
+struct _watch_time_s {
 	int year;
 	int month;
 	int day_of_week;
@@ -69,7 +65,6 @@ struct _watch_time_s
 	time_t timestamp;
 	char *timezone;
 };
-
 
 #define WATCH_APP_EVENT_MAX 5
 static Eina_List *handler_list[WATCH_APP_EVENT_MAX] = {NULL, };
@@ -205,18 +200,16 @@ static int _watch_core_create(int w, int h, void *data)
 	struct watch_app_context *app_context = data;
 	watch_app_create_cb create_cb;
 
-	if (app_context == NULL) {
+	if (app_context == NULL)
 		return watch_app_error(APP_ERROR_INVALID_CONTEXT, __FUNCTION__, NULL);
-	}
 
 	watch_core_initialized = 1;
 	_watch_core_set_appcore_event_cb(app_context);
 
 	create_cb = app_context->callback->create;
 
-	if (create_cb == NULL || create_cb(w, h, app_context->data) == false) {
+	if (create_cb == NULL || create_cb(w, h, app_context->data) == false)
 		return watch_app_error(APP_ERROR_INVALID_CONTEXT, __FUNCTION__, "watch_app_create_cb() returns false");
-	}
 
 	app_context->state = WATCH_APP_STATE_RUNNING;
 

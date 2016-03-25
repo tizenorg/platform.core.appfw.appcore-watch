@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2015 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-
 #include <string.h>
 #include <libintl.h>
-
 #include <dlog.h>
 #include <app_common.h>
 
@@ -31,41 +29,34 @@
 
 static const char* watch_app_error_to_string(app_error_e error)
 {
-	switch (error)
-	{
+	switch (error) {
 	case APP_ERROR_NONE:
 		return "NONE";
-
 	case APP_ERROR_INVALID_PARAMETER:
 		return "INVALID_PARAMETER";
-
 	case APP_ERROR_OUT_OF_MEMORY:
 		return "OUT_OF_MEMORY";
-
 	case APP_ERROR_INVALID_CONTEXT:
 		return "INVALID_CONTEXT";
-
 	case APP_ERROR_NO_SUCH_FILE:
 		return "NO_SUCH_FILE";
-
 	case APP_ERROR_ALREADY_RUNNING:
 		return "ALREADY_RUNNING";
-
-	default :
+	default:
 		return "UNKNOWN";
 	}
 }
 
-int watch_app_error(app_error_e error, const char* function, const char *description)
+int watch_app_error(app_error_e error, const char *function,
+		const char *description)
 {
 	if (description)
-	{
-		LOGE("[%s] %s(0x%08x) : %s", function, watch_app_error_to_string(error), error, description);
-	}
+		LOGE("[%s] %s(0x%08x) : %s", function,
+				watch_app_error_to_string(error), error,
+				description);
 	else
-	{
-		LOGE("[%s] %s(0x%08x)", function, watch_app_error_to_string(error), error);
-	}
+		LOGE("[%s] %s(0x%08x)", function,
+				watch_app_error_to_string(error), error);
 
 	return error;
 }

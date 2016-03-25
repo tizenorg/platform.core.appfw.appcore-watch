@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Samsung Electronics Co., Ltd All Rights Reserved
+ * Copyright (c) 2015 - 2016 Samsung Electronics Co., Ltd All Rights Reserved
  *
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -48,9 +48,8 @@ void _update_lang(void)
 		char *r = setlocale(LC_ALL, "");
 		if (r == NULL) {
 			r = setlocale(LC_ALL, lang);
-			if (r) {
+			if (r)
 				_D("*****appcore setlocale=%s\n", r);
-			}
 		}
 		free(lang);
 	} else {
@@ -77,9 +76,8 @@ void _update_region(void)
 		setenv("LC_MEASUREMENT", region, 1);
 		setenv("LC_IDENTIFICATION", region, 1);
 		r = setlocale(LC_ALL, "");
-		if (r != NULL) {
+		if (r != NULL)
 			_D("*****appcore setlocale=%s\n", r);
-		}
 		free(region);
 	} else {
 		_E("failed to get current region format for set region env");
@@ -102,7 +100,6 @@ static int __get_dir_name(char *dirname)
 
 	r = snprintf(dirname, PATH_MAX, "%s/%s" PATH_RES PATH_LOCALE,
 			PATH_APP_ROOT, pkg_name);
-
 	if (r < 0)
 		return -1;
 
@@ -111,7 +108,6 @@ static int __get_dir_name(char *dirname)
 
 	r = snprintf(dirname, PATH_MAX, "%s/%s" PATH_RES PATH_LOCALE,
 			PATH_SYS_RO_APP_ROOT, pkg_name);
-
 	if (r < 0)
 		return -1;
 
@@ -120,13 +116,11 @@ static int __get_dir_name(char *dirname)
 
 	r = snprintf(dirname, PATH_MAX, "%s/%s" PATH_RES PATH_LOCALE,
 			PATH_SYS_RW_APP_ROOT, pkg_name);
-
 	if (r < 0)
 		return -1;
 
 	return 0;
 }
-
 
 static int __set_i18n(const char *domain)
 {
@@ -146,26 +140,21 @@ static int __set_i18n(const char *domain)
 	if (r == NULL) {
 		char *lang = vconf_get_str(VCONFKEY_LANGSET);
 		r = setlocale(LC_ALL, lang);
-		if (r) {
+		if (r)
 			_D("*****appcore setlocale=%s\n", r);
-		}
-		if (lang) {
+		if (lang)
 			free(lang);
-		}
 	}
-	if (r == NULL) {
+	if (r == NULL)
 		_E("appcore: setlocale() error");
-	}
 
 	r = bindtextdomain(domain, dirname);
-	if (r == NULL) {
+	if (r == NULL)
 		_E("appcore: bindtextdomain() error");
-	}
 
 	r = textdomain(domain);
-	if (r == NULL) {
+	if (r == NULL)
 		_E("appcore: textdomain() error");
-	}
 
 	return 0;
 }
@@ -177,4 +166,3 @@ int _set_i18n(const char *domainname)
 
 	return __set_i18n(domainname);
 }
-
