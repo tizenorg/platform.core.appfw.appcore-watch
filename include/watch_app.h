@@ -213,7 +213,7 @@ int watch_app_remove_event_handler(app_event_handler_h event_handler);
  * @brief Runs the main loop of the application until watch_app_exit() is called.
  * @since_tizen 2.3.1
  *
- * @remarks http://tizen.org/privilege/alarm.set privilege is needed to receive ambient ticks at each minute. If your app hasn't the privilege and you set the watch_app_ambient_tick_cb(), #APP_ERROR_PERMISSION_DENIED will be returned.
+ * @remarks http://tizen.org/privilege/alarm.set privilege is needed to receive ambient ticks at each minute. The watch_app_ambient_tick_cb() will be ignored if your app doesn't have the privilege.
  *
  * @param[in] argc The argument count
  * @param[in] argv The argument vector
@@ -226,7 +226,6 @@ int watch_app_remove_event_handler(app_event_handler_h event_handler);
  * @retval #APP_ERROR_INVALID_PARAMETER Invalid parameter
  * @retval #APP_ERROR_INVALID_CONTEXT The application is illegally launched, not launched by the launch system.
  * @retval #APP_ERROR_ALREADY_RUNNING The main loop has already started
- * @retval #APP_ERROR_PERMISSION_DENIED Permission denied
  *
  * @see watch_app_main()
  * @see watch_app_create_cb()
