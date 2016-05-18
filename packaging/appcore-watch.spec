@@ -17,6 +17,7 @@ BuildRequires:  pkgconfig(capi-appfw-app-common)
 BuildRequires:	pkgconfig(capi-appfw-widget-application)
 BuildRequires:	pkgconfig(libtzplatform-config)
 BuildRequires:	pkgconfig(icu-uc)
+BuildRequires:	pkgconfig(ecore-wayland)
 BuildRequires:  cmake
 
 
