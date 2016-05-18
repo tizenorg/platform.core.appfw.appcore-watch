@@ -42,6 +42,7 @@ pkg_check_modules(pkg_watch REQUIRED
 		capi-appfw-app-common
 		vconf
 		elementary
+		ecore-wayland
 		vconf-internal-keys
 		libtzplatform-config
 		capi-appfw-widget-application

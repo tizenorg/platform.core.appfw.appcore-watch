@@ -33,6 +33,7 @@
 #include <vconf.h>
 #include <alarm.h>
 #include <glib-object.h>
+#include <Ecore_Wayland.h>
 #include <widget_app.h>
 
 #include "appcore-watch.h"
@@ -966,6 +967,54 @@ static int __signal_alpm_handler(int ambient, void *data)
 	return 0;
 }
 
+static Eina_Bool __show_cb(void *data, int type, void *event)
+{
+	Ecore_Wl_Event_Window_Show *ev = event;
+	_D("show %d %d", (unsigned int)ev->win, (unsigned int)ev->data[0]);
+
+	__do_app(WE_RESUME, &priv, NULL);
+
+	return ECORE_CALLBACK_RENEW;
+}
+
+static Eina_Bool __hide_cb(void *data, int type, void *event)
+{
+	Ecore_Wl_Event_Window_Hide *ev = event;
+	_D("hide %d", (unsigned int)ev->win);
+
+	__do_app(WE_PAUSE, &priv, NULL);
+
+	return ECORE_CALLBACK_RENEW;
+}
+
+static Eina_Bool __visibility_cb(void *data, int type, void *event)
+{
+	Ecore_Wl_Event_Window_Visibility_Change *ev = event;
+	_D("visibility %d %d", (unsigned int)ev->win, (unsigned int)ev->fully_obscured);
+
+	if (ev->fully_obscured)
+		__do_app(WE_PAUSE, &priv, NULL);
+	else
+		__do_app(WE_RESUME, &priv, NULL);
+
+	return ECORE_CALLBACK_RENEW;
+}
+
+static Eina_Bool __lower_cb(void *data, int type, void *event)
+{
+	_D("lower");
+
+	return ECORE_CALLBACK_RENEW;
+}
+
+static void __add_climsg(void)
+{
+	ecore_event_handler_add(ECORE_WL_EVENT_WINDOW_SHOW, __show_cb, NULL);
+	ecore_event_handler_add(ECORE_WL_EVENT_WINDOW_HIDE, __hide_cb, NULL);
+	ecore_event_handler_add(ECORE_WL_EVENT_WINDOW_VISIBILITY_CHANGE, __visibility_cb, NULL);
+	ecore_event_handler_add(ECORE_WL_EVENT_WINDOW_LOWER, __lower_cb, NULL);
+}
+
 static void __watch_core_signal_init(void)
 {
 	_watch_core_listen_alpm_handler(__signal_alpm_handler, NULL);
@@ -1029,6 +1078,8 @@ static int __before_loop(struct watch_priv *watch, int argc, char **argv)
 	}
 
 	elm_init(argc, argv);
+
+	__add_climsg();
 
 	r = watch_core_init(watch->name, &w_ops, argc, argv);
 	_retv_if(r < 0, -1);
