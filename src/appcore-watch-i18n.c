@@ -88,19 +88,24 @@ void _update_region(void)
 /* from appcore.c */
 static int __get_dir_name(char *dirname)
 {
-	char pkg_name[PKGNAME_MAX];
+	char pkgid[PKGNAME_MAX];
 	int r;
-	int pid;
+	const char *root_path;
 
-	pid = getpid();
-	if (pid < 0)
-		return -1;
+	root_path = aul_get_preinit_root_path();
+	if (root_path) {
+		snprintf(dirname, PATH_MAX, "%s" PATH_RES PATH_LOCALE,
+				root_path);
+		if (access(dirname, R_OK) == 0)
+			return 0;
+	}
 
-	if (aul_app_get_pkgname_bypid(pid, pkg_name, PKGNAME_MAX) != AUL_R_OK)
+	r = aul_app_get_pkgid_bypid(getpid(), pkgid, sizeof(pkgid));
+	if (r != AUL_R_OK)
 		return -1;
 
 	r = snprintf(dirname, PATH_MAX, "%s/%s" PATH_RES PATH_LOCALE,
-			PATH_APP_ROOT, pkg_name);
+			PATH_APP_ROOT, pkgid);
 	if (r < 0)
 		return -1;
 
@@ -108,7 +113,7 @@ static int __get_dir_name(char *dirname)
 		return 0;
 
 	r = snprintf(dirname, PATH_MAX, "%s/%s" PATH_RES PATH_LOCALE,
-			PATH_SYS_RO_APP_ROOT, pkg_name);
+			PATH_SYS_RO_APP_ROOT, pkgid);
 	if (r < 0)
 		return -1;
 
@@ -116,7 +121,7 @@ static int __get_dir_name(char *dirname)
 		return 0;
 
 	r = snprintf(dirname, PATH_MAX, "%s/%s" PATH_RES PATH_LOCALE,
-			PATH_SYS_RW_APP_ROOT, pkg_name);
+			PATH_SYS_RW_APP_ROOT, pkgid);
 	if (r < 0)
 		return -1;
 
