@@ -24,19 +24,13 @@
 #include <linux/limits.h>
 
 #include <glib.h>
-#include <tzplatform_config.h>
 #include <aul.h>
 #include <vconf.h>
 
 #include "appcore-watch-log.h"
 #include "appcore-watch-internal.h"
 
-#define PKGNAME_MAX 256
-#define PATH_APP_ROOT tzplatform_getenv(TZ_USER_APP)
-#define PATH_SYS_RO_APP_ROOT tzplatform_getenv(TZ_SYS_RO_APP)
-#define PATH_SYS_RW_APP_ROOT tzplatform_getenv(TZ_SYS_RW_APP)
-#define PATH_RES "/res"
-#define PATH_LOCALE "/locale"
+#define PATH_LOCALE "locale"
 
 void _update_lang(void)
 {
@@ -86,38 +80,18 @@ void _update_region(void)
 }
 
 /* from appcore.c */
-static int __get_dir_name(char *dirname)
+static int __get_locale_resource_dir(char *locale_dir, int size)
 {
-	char pkg_name[PKGNAME_MAX];
-	int r;
-	int pid;
+	const char *res_path;
 
-	pid = getpid();
-	if (pid < 0)
+	res_path = aul_get_app_resource_path();
+	if (res_path == NULL) {
+		_E("Failed to get resource path");
 		return -1;
+	}
 
-	if (aul_app_get_pkgname_bypid(pid, pkg_name, PKGNAME_MAX) != AUL_R_OK)
-		return -1;
-
-	r = snprintf(dirname, PATH_MAX, "%s/%s" PATH_RES PATH_LOCALE,
-			PATH_APP_ROOT, pkg_name);
-	if (r < 0)
-		return -1;
-
-	if (access(dirname, R_OK) == 0)
-		return 0;
-
-	r = snprintf(dirname, PATH_MAX, "%s/%s" PATH_RES PATH_LOCALE,
-			PATH_SYS_RO_APP_ROOT, pkg_name);
-	if (r < 0)
-		return -1;
-
-	if (access(dirname, R_OK) == 0)
-		return 0;
-
-	r = snprintf(dirname, PATH_MAX, "%s/%s" PATH_RES PATH_LOCALE,
-			PATH_SYS_RW_APP_ROOT, pkg_name);
-	if (r < 0)
+	snprintf(locale_dir, size, "%s" PATH_LOCALE, res_path);
+	if (access(locale_dir, R_OK) != 0)
 		return -1;
 
 	return 0;
@@ -126,7 +100,7 @@ static int __get_dir_name(char *dirname)
 static int __set_i18n(const char *domain)
 {
 	char *r;
-	char dirname[PATH_MAX];
+	char locale_dir[PATH_MAX];
 	char *lang;
 
 	if (domain == NULL) {
@@ -134,8 +108,8 @@ static int __set_i18n(const char *domain)
 		return -1;
 	}
 
-	__get_dir_name(dirname);
-	_D("locale dir: %s", dirname);
+	__get_locale_resource_dir(locale_dir, sizeof(locale_dir));
+	_D("locale dir: %s", locale_dir);
 
 	r = setlocale(LC_ALL, "");
 	/* if locale is not set properly, try again to set as language base */
@@ -150,7 +124,7 @@ static int __set_i18n(const char *domain)
 	if (r == NULL)
 		_E("appcore: setlocale() error");
 
-	r = bindtextdomain(domain, dirname);
+	r = bindtextdomain(domain, locale_dir);
 	if (r == NULL)
 		_E("appcore: bindtextdomain() error");
 
