@@ -17,8 +17,6 @@
 #ifndef __APPCORE_WATCH_SIGNAL_H__
 #define __APPCORE_WATCH_SIGNAL_H__
 
-#include <dbus/dbus.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -33,7 +31,7 @@ extern "C" {
 #define CLOCK_START "clockbegin"
 #define CLOCK_STOP "clockstop"
 
-int _watch_core_listen_alpm_handler(int (*func) (int, void *), void *data);
+int _watch_core_listen_alpm_handler(int (*func)(int, void *), void *data);
 int _watch_core_send_alpm_update_done(void);
 
 #ifdef __cplusplus

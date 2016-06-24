@@ -8,7 +8,6 @@ Source0:    appcore-watch-%{version}.tar.gz
 BuildRequires:  pkgconfig(aul)
 BuildRequires:  pkgconfig(dlog)
 BuildRequires:  pkgconfig(elementary)
-BuildRequires:  pkgconfig(dbus-glib-1)
 BuildRequires:  pkgconfig(vconf)
 BuildRequires:  pkgconfig(vconf-internal-keys)
 BuildRequires:  pkgconfig(alarm-service)
@@ -18,6 +17,8 @@ BuildRequires:	pkgconfig(capi-appfw-widget-application)
 BuildRequires:	pkgconfig(libtzplatform-config)
 BuildRequires:	pkgconfig(icu-uc)
 BuildRequires:	pkgconfig(ecore-wayland)
+BuildRequires:	pkgconfig(glib-2.0)
+BuildRequires:	pkgconfig(gio-2.0)
 BuildRequires:  cmake
 
 

@@ -36,7 +36,6 @@ INCLUDE(FindPkgConfig)
 pkg_check_modules(pkg_watch REQUIRED
 		aul
 		dlog
-		dbus-glib-1
 		alarm-service
 		capi-appfw-app-control
 		capi-appfw-app-common
@@ -47,6 +46,8 @@ pkg_check_modules(pkg_watch REQUIRED
 		libtzplatform-config
 		capi-appfw-widget-application
 		icu-i18n
+		glib-2.0
+		gio-2.0
 		)
 FOREACH(flag ${pkg_watch_CFLAGS})
 	SET(EXTRA_CFLAGS_watch "${EXTRA_CFLAGS_watch} ${flag}")

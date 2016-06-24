@@ -24,8 +24,8 @@
 #include <malloc.h>
 
 #include <dlog.h>
-#include <dbus/dbus.h>
-#include <dbus/dbus-glib-lowlevel.h>
+#include <glib.h>
+#include <gio/gio.h>
 
 #include "appcore-watch-log.h"
 #include "appcore-watch-signal.h"
@@ -38,92 +38,64 @@
 
 #define MAX_BUFFER_SIZE		512
 
-static DBusConnection *bus = NULL;
-static int (*_deviced_signal_alpm_handler) (int ambient, void *data);
+static GDBusConnection *conn;
+static guint s_id;
+static int (*_deviced_signal_alpm_handler)(int ambient, void *data);
 static void *_deviced_signal_alpm_data;
 
-static DBusHandlerResult __dbus_signal_filter(DBusConnection *conn,
-		DBusMessage *message, void *user_data)
+static void __dbus_signal_filter(GDBusConnection *connection,
+		const gchar *sender_name, const gchar *object_name,
+		const gchar *interface_name, const gchar *signal_name,
+		GVariant *parameters, gpointer user_data)
 {
-	const char *sender;
-	const char *interface;
-	const char *value;
+	gchar *value = NULL;
 
-	DBusError error;
-	dbus_error_init(&error);
-
-	sender = dbus_message_get_sender(message);
-	if (sender == NULL)
-		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-
-	interface = dbus_message_get_interface(message);
-	if (interface == NULL) {
-		_E("reject by security issue - no interface\n");
-		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-	}
-
-	if (dbus_message_is_signal(message, interface,
-				DEVICED_SIGNAL_HOME_SCREEN)) {
-		if (dbus_message_get_args(message, &error, DBUS_TYPE_STRING,
-					&value, DBUS_TYPE_INVALID) == FALSE) {
-			_E("Failed to get data: %s", error.message);
-			dbus_error_free(&error);
-		}
-
+	if (g_strcmp0(signal_name, DEVICED_SIGNAL_HOME_SCREEN) == 0) {
 		if (_deviced_signal_alpm_handler) {
-			if (strcmp(value, CLOCK_START) == 0)
+			g_variant_get(parameters, "(&s)", &value);
+			if (g_strcmp0(value, CLOCK_START) == 0) {
 				_deviced_signal_alpm_handler(1,
 						_deviced_signal_alpm_data);
-			else if (strcmp(value, CLOCK_STOP) == 0)
+			} else if (g_strcmp0(value, CLOCK_STOP) == 0) {
 				_deviced_signal_alpm_handler(0,
 						_deviced_signal_alpm_data);
+			}
 		}
 	}
-
-	return DBUS_HANDLER_RESULT_HANDLED;
 }
 
 static int __dbus_init(void)
 {
-	DBusError error;
+	GError *err = NULL;
 
-	if (bus)
-		return 0;
-
-	dbus_error_init(&error);
-	bus = dbus_bus_get_private(DBUS_BUS_SYSTEM, &error);
-	if (!bus) {
-		_E("Failed to connect to the D-BUS daemon: %s", error.message);
-		dbus_error_free(&error);
-		return -1;
+	if (conn == NULL) {
+		conn = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL, &err);
+		if (conn == NULL) {
+			_E("g_bus_get_sync() is failed. %s", err->message);
+			g_error_free(err);
+			return -1;
+		}
 	}
 
-	dbus_connection_setup_with_g_main(bus, NULL);
+	g_clear_error(&err);
 
 	return 0;
 }
 
 static int __dbus_signal_handler_init(const char *path, const char *interface)
 {
-	char rule[MAX_BUFFER_SIZE] = {0,};
-	DBusError error;
-
-	dbus_error_init(&error);
-
-	snprintf(rule, MAX_BUFFER_SIZE,
-			"path='%s',type='signal',interface='%s'", path,
-			interface);
-
-	dbus_bus_add_match(bus, rule, &error);
-	if (dbus_error_is_set(&error)) {
-		_E("Fail to rule set: %s", error.message);
-		dbus_error_free(&error);
-		return -1;
-	}
-
-	if (dbus_connection_add_filter(bus, __dbus_signal_filter, NULL,
-				NULL) == FALSE) {
-		_E("add filter fail");
+	s_id = g_dbus_connection_signal_subscribe(conn,
+					NULL,
+					interface,
+					NULL,
+					path,
+					NULL,
+					G_DBUS_SIGNAL_FLAGS_NONE,
+					__dbus_signal_filter,
+					NULL,
+					NULL);
+	if (s_id == 0) {
+		_E("g_dbus_connection_signal_subscribe() is failed.");
 		return -1;
 	}
 
@@ -134,7 +106,8 @@ int _watch_core_listen_alpm_handler(int (*func) (int, void *), void *data)
 {
 	_D("watch_core_listen_deviced_alpm");
 
-	__dbus_init();
+	if (__dbus_init() < 0)
+		return -1;
 
 	if (__dbus_signal_handler_init(DEVICED_PATH, DEVICED_INTERFACE) < 0) {
 		_E("error app signal init");
@@ -149,26 +122,30 @@ int _watch_core_listen_alpm_handler(int (*func) (int, void *), void *data)
 
 int _watch_core_send_alpm_update_done(void)
 {
-	DBusMessage *message;
+	GError *err = NULL;
 
-	__dbus_init();
+	if (__dbus_init() < 0)
+		return -1;
 
-	message = dbus_message_new_signal(ALPM_VIEWER_PATH,
-			ALPM_VIEWER_INTERFACE, ALPM_VIEWER_SIGNAL_DRAW_DONE);
-
-	if (dbus_message_append_args(message,
-				DBUS_TYPE_INVALID) == FALSE) {
-		_E("Failed to load data error");
+	if (g_dbus_connection_emit_signal(conn,
+					NULL,
+					ALPM_VIEWER_PATH,
+					ALPM_VIEWER_INTERFACE,
+					ALPM_VIEWER_SIGNAL_DRAW_DONE,
+					NULL,
+					&err) == FALSE) {
+		_E("g_dbus_connection_emit_signal() is failed. %s",
+				err->message);
 		return -1;
 	}
 
-	if (dbus_connection_send(bus, message, NULL) == FALSE) {
-		_E("dbus send error");
+	if (g_dbus_connection_flush_sync(conn, NULL, &err) == FALSE) {
+		_E("g_dbus_connection_flush_sync() is failed. %s",
+				err->message);
 		return -1;
 	}
 
-	dbus_connection_flush(bus);
-	dbus_message_unref(message);
+	g_clear_error(&err);
 
 	_I("send a alpm update done signal");
 
