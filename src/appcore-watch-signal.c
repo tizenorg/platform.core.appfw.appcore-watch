@@ -43,6 +43,7 @@ static guint s_id;
 static int (*_deviced_signal_alpm_handler)(int ambient, void *data);
 static void *_deviced_signal_alpm_data;
 
+/* LCOV_EXCL_START */
 static void __dbus_signal_filter(GDBusConnection *connection,
 		const gchar *sender_name, const gchar *object_name,
 		const gchar *interface_name, const gchar *signal_name,
@@ -63,6 +64,7 @@ static void __dbus_signal_filter(GDBusConnection *connection,
 		}
 	}
 }
+/* LCOV_EXCL_STOP */
 
 static int __dbus_init(void)
 {
@@ -71,9 +73,9 @@ static int __dbus_init(void)
 	if (conn == NULL) {
 		conn = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL, &err);
 		if (conn == NULL) {
-			_E("g_bus_get_sync() is failed. %s", err->message);
-			g_error_free(err);
-			return -1;
+			_E("g_bus_get_sync() is failed. %s", err->message); /* LCOV_EXCL_LINE */
+			g_error_free(err); /* LCOV_EXCL_LINE */
+			return -1; /* LCOV_EXCL_LINE */
 		}
 	}
 
@@ -95,8 +97,8 @@ static int __dbus_signal_handler_init(const char *path, const char *interface)
 					NULL,
 					NULL);
 	if (s_id == 0) {
-		_E("g_dbus_connection_signal_subscribe() is failed.");
-		return -1;
+		_E("g_dbus_connection_signal_subscribe() is failed."); /* LCOV_EXCL_LINE */
+		return -1; /* LCOV_EXCL_LINE */
 	}
 
 	return 0;
@@ -110,8 +112,8 @@ int _watch_core_listen_alpm_handler(int (*func) (int, void *), void *data)
 		return -1;
 
 	if (__dbus_signal_handler_init(DEVICED_PATH, DEVICED_INTERFACE) < 0) {
-		_E("error app signal init");
-		return -1;
+		_E("error app signal init"); /* LCOV_EXCL_LINE */
+		return -1; /* LCOV_EXCL_LINE */
 	}
 
 	_deviced_signal_alpm_handler = func;
@@ -120,6 +122,7 @@ int _watch_core_listen_alpm_handler(int (*func) (int, void *), void *data)
 	return 0;
 }
 
+/* LCOV_EXCL_START */
 int _watch_core_send_alpm_update_done(void)
 {
 	GError *err = NULL;
@@ -151,4 +154,5 @@ int _watch_core_send_alpm_update_done(void)
 
 	return 0;
 }
+/* LCOV_EXCL_STOP */
 

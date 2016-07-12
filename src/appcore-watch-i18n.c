@@ -42,13 +42,13 @@ void _update_lang(void)
 
 		r = setlocale(LC_ALL, "");
 		if (r == NULL) {
-			r = setlocale(LC_ALL, lang);
-			if (r)
-				_D("*****appcore setlocale=%s\n", r);
+			r = setlocale(LC_ALL, lang); /* LCOV_EXCL_LINE */
+			if (r) /* LCOV_EXCL_LINE */
+				_D("*****appcore setlocale=%s\n", r); /* LCOV_EXCL_LINE */
 		}
 		free(lang);
 	} else {
-		_E("failed to get current language for set lang env");
+		_E("failed to get current language for set lang env"); /* LCOV_EXCL_LINE */
 	}
 }
 
@@ -75,7 +75,7 @@ void _update_region(void)
 			_D("*****appcore setlocale=%s\n", r);
 		free(region);
 	} else {
-		_E("failed to get current region format for set region env");
+		_E("failed to get current region format for set region env"); /* LCOV_EXCL_LINE */
 	}
 }
 
@@ -86,8 +86,8 @@ static int __get_locale_resource_dir(char *locale_dir, int size)
 
 	res_path = aul_get_app_resource_path();
 	if (res_path == NULL) {
-		_E("Failed to get resource path");
-		return -1;
+		_E("Failed to get resource path"); /* LCOV_EXCL_LINE */
+		return -1; /* LCOV_EXCL_LINE */
 	}
 
 	snprintf(locale_dir, size, "%s" PATH_LOCALE, res_path);
@@ -104,8 +104,8 @@ static int __set_i18n(const char *domain)
 	char *lang;
 
 	if (domain == NULL) {
-		errno = EINVAL;
-		return -1;
+		errno = EINVAL; /* LCOV_EXCL_LINE */
+		return -1; /* LCOV_EXCL_LINE */
 	}
 
 	__get_locale_resource_dir(locale_dir, sizeof(locale_dir));
@@ -114,23 +114,23 @@ static int __set_i18n(const char *domain)
 	r = setlocale(LC_ALL, "");
 	/* if locale is not set properly, try again to set as language base */
 	if (r == NULL) {
-		lang = vconf_get_str(VCONFKEY_LANGSET);
-		r = setlocale(LC_ALL, lang);
-		if (r)
-			_D("*****appcore setlocale=%s\n", r);
-		if (lang)
-			free(lang);
+		lang = vconf_get_str(VCONFKEY_LANGSET); /* LCOV_EXCL_LINE */
+		r = setlocale(LC_ALL, lang); /* LCOV_EXCL_LINE */
+		if (r) /* LCOV_EXCL_LINE */
+			_D("*****appcore setlocale=%s\n", r); /* LCOV_EXCL_LINE */
+		if (lang) /* LCOV_EXCL_LINE */
+			free(lang); /* LCOV_EXCL_LINE */
 	}
 	if (r == NULL)
-		_E("appcore: setlocale() error");
+		_E("appcore: setlocale() error"); /* LCOV_EXCL_LINE */
 
 	r = bindtextdomain(domain, locale_dir);
 	if (r == NULL)
-		_E("appcore: bindtextdomain() error");
+		_E("appcore: bindtextdomain() error"); /* LCOV_EXCL_LINE */
 
 	r = textdomain(domain);
 	if (r == NULL)
-		_E("appcore: textdomain() error");
+		_E("appcore: textdomain() error"); /* LCOV_EXCL_LINE */
 
 	return 0;
 }

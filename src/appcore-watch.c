@@ -376,6 +376,7 @@ static int __watch_appcontrol(void *data, bundle *k)
 	return 0;
 }
 
+/* LCOV_EXCL_START */
 static int __watch_terminate(void *data)
 {
 	struct watch_core *wc = data;
@@ -387,7 +388,9 @@ static int __watch_terminate(void *data)
 
 	return 0;
 }
+/* LCOV_EXCL_STOP */
 
+/* LCOV_EXCL_START */
 static int __sys_do_default(struct watch_core *wc, enum sys_event event)
 {
 	switch (event) {
@@ -400,6 +403,7 @@ static int __sys_do_default(struct watch_core *wc, enum sys_event event)
 
 	return 0;
 }
+/* LCOV_EXCL_STOP */
 
 static int __sys_do(struct watch_core *wc, void *event_info,
 		enum sys_event event)
@@ -605,6 +609,7 @@ static int __del_vconf(enum sys_event se)
 	return r;
 }
 
+/* LCOV_EXCL_START */
 static int __del_vconf_list(void)
 {
 	int r;
@@ -622,6 +627,7 @@ static int __del_vconf_list(void)
 
 	return 0;
 }
+/* LCOV_EXCL_STOP */
 
 static int __aul_handler(aul_type type, bundle *b, void *data)
 {
@@ -831,6 +837,7 @@ static Eina_Bool __watch_core_time_tick(void *data)
 	return ECORE_CALLBACK_CANCEL;
 }
 
+/* LCOV_EXCL_START */
 static int __watch_core_ambient_tick(alarm_id_t id, void *data)
 {
 	struct watch_time_s timeinfo;
@@ -843,6 +850,7 @@ static int __watch_core_ambient_tick(alarm_id_t id, void *data)
 
 	return 0;
 }
+/* LCOV_EXCL_STOP */
 
 static int __widget_create(const char *id, const char *content, int w, int h,
 		void *data)
@@ -868,12 +876,15 @@ static int __widget_create(const char *id, const char *content, int w, int h,
 	return WIDGET_ERROR_NONE;
 }
 
+/* LCOV_EXCL_START */
 static int __widget_resize(const char *id, int w, int h, void *data)
 {
 
 	return WIDGET_ERROR_NONE;
 }
+/* LCOV_EXCL_STOP */
 
+/* LCOV_EXCL_START */
 static int __widget_destroy(const char *id, widget_app_destroy_type_e reason,
 		void *data)
 {
@@ -883,7 +894,9 @@ static int __widget_destroy(const char *id, widget_app_destroy_type_e reason,
 
 	return WIDGET_ERROR_NONE;
 }
+/* LCOV_EXCL_STOP */
 
+/* LCOV_EXCL_START */
 static int __widget_pause(const char *id, void *data)
 {
 	_D("widget_pause");
@@ -892,7 +905,9 @@ static int __widget_pause(const char *id, void *data)
 
 	return WIDGET_ERROR_NONE;
 }
+/* LCOV_EXCL_STOP */
 
+/* LCOV_EXCL_START */
 static int __widget_resume(const char *id, void *data)
 {
 	_D("widget_resume");
@@ -901,7 +916,9 @@ static int __widget_resume(const char *id, void *data)
 
 	return WIDGET_ERROR_NONE;
 }
+/* LCOV_EXCL_STOP */
 
+/* LCOV_EXCL_START */
 static int __signal_alpm_handler(int ambient, void *data)
 {
 	struct watch_time_s timeinfo;
@@ -966,6 +983,7 @@ static int __signal_alpm_handler(int ambient, void *data)
 
 	return 0;
 }
+/* LCOV_EXCL_STOP */
 
 static Eina_Bool __show_cb(void *data, int type, void *event)
 {
@@ -989,6 +1007,7 @@ static Eina_Bool __hide_cb(void *data, int type, void *event)
 	return ECORE_CALLBACK_RENEW;
 }
 
+/* LCOV_EXCL_START */
 static Eina_Bool __visibility_cb(void *data, int type, void *event)
 {
 	Ecore_Wl_Event_Window_Visibility_Change *ev = event;
@@ -1002,13 +1021,16 @@ static Eina_Bool __visibility_cb(void *data, int type, void *event)
 
 	return ECORE_CALLBACK_RENEW;
 }
+/* LCOV_EXCL_STOP */
 
+/* LCOV_EXCL_START */
 static Eina_Bool __lower_cb(void *data, int type, void *event)
 {
 	_D("lower");
 
 	return ECORE_CALLBACK_RENEW;
 }
+/* LCOV_EXCL_STOP */
 
 static void __add_climsg(void)
 {
@@ -1141,7 +1163,6 @@ EXPORT_API int watch_core_terminate()
 	ecore_main_loop_thread_safe_call_sync((Ecore_Data_Cb)__exit_loop, NULL);
 	return 0;
 }
-
 
 EXPORT_API void watch_core_get_timeinfo(struct watch_time_s *timeinfo)
 {

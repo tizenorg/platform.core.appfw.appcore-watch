@@ -248,6 +248,7 @@ static int _watch_core_control(app_control_h app_control, void *data)
 	return APP_ERROR_NONE;
 }
 
+/* LCOV_EXCL_START */
 static int _watch_core_pause(void *data)
 {
 	struct watch_app_context *app_context = data;
@@ -266,6 +267,7 @@ static int _watch_core_pause(void *data)
 
 	return APP_ERROR_NONE;
 }
+/* LCOV_EXCL_STOP */
 
 static int _watch_core_resume(void *data)
 {
@@ -326,6 +328,7 @@ static void _watch_core_time_tick(void *watchtime, void *data)
 		time_tick_cb((watch_time_h)watchtime, app_context->data);
 }
 
+/* LCOV_EXCL_START */
 static void _watch_core_ambient_tick(void *watchtime, void *data)
 {
 	struct watch_app_context *app_context = data;
@@ -341,7 +344,9 @@ static void _watch_core_ambient_tick(void *watchtime, void *data)
 	if (ambient_tick_cb != NULL)
 		ambient_tick_cb((watch_time_h)watchtime, app_context->data);
 }
+/* LCOV_EXCL_STOP */
 
+/* LCOV_EXCL_START */
 static void _watch_core_ambient_changed(int ambient, void *data)
 {
 	struct watch_app_context *app_context = data;
@@ -357,7 +362,7 @@ static void _watch_core_ambient_changed(int ambient, void *data)
 	if (ambient_changed_cb != NULL)
 		ambient_changed_cb((bool)ambient, app_context->data);
 }
-
+/* LCOV_EXCL_STOP */
 
 EXPORT_API int watch_app_main(int argc, char **argv,
 		watch_app_lifecycle_callback_s *callback, void *user_data)
